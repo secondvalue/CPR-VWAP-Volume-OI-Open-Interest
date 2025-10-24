@@ -1,10 +1,13 @@
 name: Nifty Options Trading Bot
 
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
   schedule:
-    # Runs at 9:10 AM IST (3:40 AM UTC) Monday-Friday
     - cron: '40 3 * * 1-5'
+
+# Set timezone for entire workflow
+env:
+  TZ: Asia/Kolkata
 
 jobs:
   trade:
@@ -25,8 +28,8 @@ jobs:
     
     - name: Display IST time
       run: |
-        echo "UTC Time: $(date -u)"
-        echo "IST Time: $(TZ='Asia/Kolkata' date)"
+        echo "System timezone: $TZ"
+        echo "Current time: $(date)"
     
     - name: Run trading bot
       run: python -u main.py
