@@ -1,7 +1,10 @@
 name: Nifty Options Trading Bot
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    # Runs at 9:10 AM IST (3:40 AM UTC) Monday-Friday
+    - cron: '40 3 * * 1-5'
 
 jobs:
   trade:
@@ -15,15 +18,18 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+        cache: 'pip'
     
     - name: Install dependencies
       run: pip install -r requirements.txt
     
     - name: Display IST time
-      run: echo "IST Time:" && TZ='Asia/Kolkata' date
+      run: |
+        echo "UTC Time: $(date -u)"
+        echo "IST Time: $(TZ='Asia/Kolkata' date)"
     
     - name: Run trading bot
-      run: python main.py
+      run: python -u main.py
       timeout-minutes: 390
     
     - name: Upload trade logs
@@ -31,5 +37,8 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: trade-logs-${{ github.run_number }}
-        path: nifty_trades.csv
+        path: |
+          nifty_cpr_trades.csv
+          *.log
         retention-days: 30
+        if-no-files-found: warn
