@@ -5,7 +5,7 @@ NIFTY 50 OPTIONS BOT - PRODUCTION VERSION V2.1
 ✅ P&L Management (TP: ₹1500, SL: ₹2000, Trailing: ₹500)
 ✅ Discord Notifications
 ✅ Full Date/Time CSV Logging
-✅ FIXED: Volume threshold optimized for 5-min candles
+✅ FIXED: Volume threshold optimized for 5-min candles s
 """
 
 
