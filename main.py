@@ -1,11 +1,13 @@
 """
-NIFTY 50 OPTIONS BOT - PRODUCTION VERSION V2
+NIFTY 50 OPTIONS BOT - PRODUCTION VERSION V2.1
 ✅ Strategy: CPR + VWAP + Volume + OI
 ✅ Lot Size: 75
 ✅ P&L Management (TP: ₹1500, SL: ₹2000, Trailing: ₹500)
 ✅ Discord Notifications
 ✅ Full Date/Time CSV Logging
+✅ FIXED: Volume threshold optimized for 5-min candles
 """
+
 
 import requests
 import pandas as pd
@@ -14,20 +16,24 @@ import datetime as dt
 import time
 import csv
 
+
 # ==================== CONFIGURATION ====================
-ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiI1NUJBOVgiLCJqdGkiOiI2OGZhZjQ2YzlkOTQ4YzMxMjA2NGQ2OTIiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6ZmFsc2UsImlhdCI6MTc2MTI3NzAzNiwiaXNzIjoidWRhcGktZ2F0ZXdheS1zZXJ2aWNlIiwiZXhwIjoxNzYxMzQzMjAwfQ.6DnLTsjCwJx79Jz35fqwxPp6pLs7rshFQnWaz4acI5E"
+ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiI1NUJBOVgiLCJqdGkiOiI2OGZlZTkyNTZmYzliMzVhNWEwNTFmOGEiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6ZmFsc2UsImlhdCI6MTc2MTUzNjI5MywiaXNzIjoidWRhcGktZ2F0ZXdheS1zZXJ2aWNlIiwiZXhwIjoxNzYxNjAyNDAwfQ.taIa_G49YRz1wxhvdmQqN-n3aLoDoqn_mwmeuVC6d7w"
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1412386951474057299/Jgft_nxzGxcfWOhoLbSWMde-_bwapvqx8l3VQGQwEoR7_8n4b9Q9zN242kMoXsVbLdvG"
+
 
 NIFTY_SYMBOL = "NSE_INDEX|Nifty 50"
 CSV_FILE = "nifty_cpr_trades.csv"
 SIGNAL_COOLDOWN = 300
 
+
 LOT_SIZE = 75
 TAKE_PROFIT = 1500
 STOP_LOSS = 2000
 TRAILING_STOP = 500
-VOLUME_THRESHOLD = 1.2  # Volume must be 20% above average
+VOLUME_THRESHOLD = 1.05  # ✅ FIXED: Lowered from 1.2 to 1.05 for better signal detection
 # =======================================================
+
 
 last_signal_time = None
 current_expiry_date = None
@@ -35,7 +41,9 @@ contracts_cache = []
 open_position = None
 
 
+
 # ==================== POSITION TRACKING ====================
+
 
 class Position:
     def __init__(self, signal_type, strike, entry_premium, instrument_key, timestamp):
@@ -82,7 +90,9 @@ class Position:
         return False, None, pnl, premium_diff
 
 
+
 # ==================== DISCORD ====================
+
 
 def send_discord_alert(title, description, color=0x00ff00, fields=None):
     embed = {
@@ -104,7 +114,9 @@ def send_discord_alert(title, description, color=0x00ff00, fields=None):
         print(f"  ⚠️  Discord error: {e}")
 
 
+
 # ==================== TOKEN VALIDATION ====================
+
 
 def validate_token():
     url = "https://api.upstox.com/v2/user/profile"
@@ -125,7 +137,9 @@ def validate_token():
         return False
 
 
+
 # ==================== GET EXPIRY DATE ====================
+
 
 def get_next_tuesday_expiry():
     today = dt.datetime.now()
@@ -146,7 +160,9 @@ def get_next_tuesday_expiry():
     return expiry_date
 
 
+
 # ==================== GET OPTION INSTRUMENTS ====================
+
 
 def get_option_instruments():
     global current_expiry_date, contracts_cache
@@ -205,6 +221,7 @@ def get_option_instruments():
         return []
 
 
+
 def get_spot_price():
     try:
         encoded_symbol = NIFTY_SYMBOL.replace("|", "%7C").replace(" ", "%20")
@@ -223,7 +240,9 @@ def get_spot_price():
         return None
 
 
+
 # ==================== GET LIVE OI ====================
+
 
 def get_live_oi_from_quotes(instrument_keys):
     if not instrument_keys:
@@ -277,7 +296,9 @@ def get_live_oi_from_quotes(instrument_keys):
     return trend, ce_oi_total, pe_oi_total
 
 
+
 # ==================== LIVE DATA FETCHING ====================
+
 
 def get_live_candles(symbol):
     encoded_symbol = symbol.replace("|", "%7C").replace(" ", "%20")
@@ -327,7 +348,9 @@ def get_live_candles(symbol):
         return None
 
 
+
 # ==================== CPR CALCULATION ====================
+
 
 def calculate_cpr_from_previous_day():
     """Calculate CPR using previous day's High, Low, Close"""
@@ -374,6 +397,7 @@ def calculate_cpr_from_previous_day():
         return None, None, None
 
 
+
 def calculate_cpr_from_session(df):
     """Fallback: Calculate CPR from current session data"""
     if len(df) < 20:
@@ -394,27 +418,34 @@ def calculate_cpr_from_session(df):
     return tc, pivot, bc
 
 
+
 # ==================== INDICATORS ====================
 
+
 def calculate_indicators(df):
-    """Calculate VWAP and Volume Analysis"""
+    """Calculate VWAP and Volume Analysis - FIXED VERSION"""
+    # VWAP Calculation
     df["TP"] = (df["high"] + df["low"] + df["close"]) / 3
     df["TPV"] = df["TP"] * df["volume"]
     df["Cumulative_TPV"] = df["TPV"].cumsum()
     df["Cumulative_Volume"] = df["volume"].cumsum()
     df["VWAP"] = df["Cumulative_TPV"] / df["Cumulative_Volume"]
     
-    df["Avg_Volume"] = df["volume"].rolling(window=20, min_periods=1).mean()
-    df["Volume_Ratio"] = df["volume"] / df["Avg_Volume"]
+    # ✅ FIXED: Use session average for more realistic volume comparison
+    session_avg_volume = df["volume"].mean()
+    df["Avg_Volume"] = session_avg_volume
+    df["Volume_Ratio"] = df["volume"] / session_avg_volume
     
+    # Fallback values
     df["VWAP"] = df["VWAP"].fillna(df["close"])
-    df["Avg_Volume"] = df["Avg_Volume"].fillna(df["volume"])
     df["Volume_Ratio"] = df["Volume_Ratio"].fillna(1)
     
     return df
 
 
+
 # ==================== STRIKE & PREMIUM ====================
+
 
 def get_current_premium(instrument_key):
     quote_url = f"https://api.upstox.com/v2/market-quote/quotes?instrument_key={instrument_key}"
@@ -437,6 +468,7 @@ def get_current_premium(instrument_key):
         return None
     except:
         return None
+
 
 
 def find_atm_strike_with_live_premium(spot_price, option_type):
@@ -464,7 +496,9 @@ def find_atm_strike_with_live_premium(spot_price, option_type):
         return None, None, None
 
 
+
 # ==================== SIGNAL LOGIC ====================
+
 
 def evaluate_signal(spot, tc, bc, vwap, volume_ratio, oi_trend):
     """Evaluate CPR + VWAP + Volume + OI signals"""
@@ -495,7 +529,8 @@ def evaluate_signal(spot, tc, bc, vwap, volume_ratio, oi_trend):
     return None, conditions
 
 
-def print_signal_evaluation(conditions, tc, bc):
+
+def print_signal_evaluation(conditions, tc, bc, volume_ratio):
     """Print detailed signal evaluation"""
     print(f"\n🔍 SIGNAL EVALUATION (All ✅ required for trade)")
     print("-" * 85)
@@ -508,16 +543,18 @@ def print_signal_evaluation(conditions, tc, bc):
     
     print(f"  CALL: {'✅' if ce['price_above_tc'] else '❌'} Above TC({tc:.2f})  "
           f"{'✅' if ce['price_above_vwap'] else '❌'} Above VWAP  "
-          f"{'✅' if ce['volume_high'] else '❌'} High Vol  "
+          f"{'✅' if ce['volume_high'] else '❌'} Vol>{VOLUME_THRESHOLD}x({volume_ratio:.2f}x)  "
           f"{'✅' if ce['oi_bullish'] else '❌'} OI-Bull  →  {ce_result}")
     
     print(f"  PUT:  {'✅' if pe['price_below_bc'] else '❌'} Below BC({bc:.2f})  "
           f"{'✅' if pe['price_below_vwap'] else '❌'} Below VWAP  "
-          f"{'✅' if pe['volume_high'] else '❌'} High Vol  "
+          f"{'✅' if pe['volume_high'] else '❌'} Vol>{VOLUME_THRESHOLD}x({volume_ratio:.2f}x)  "
           f"{'✅' if pe['oi_bearish'] else '❌'} OI-Bear  →  {pe_result}")
 
 
+
 # ==================== LOGGING ====================
+
 
 def log_signal(timestamp, signal, strike, premium, spot, vwap, volume_ratio, tc, pivot, bc, oi_trend, exit_reason=None, pnl=None, premium_diff=None):
     with open(CSV_FILE, "a", newline='', encoding='utf-8') as f:
@@ -537,13 +574,15 @@ def log_signal(timestamp, signal, strike, premium, spot, vwap, volume_ratio, tc,
         ])
 
 
+
 # ==================== MAIN LOOP ====================
+
 
 def main():
     global last_signal_time, open_position
     
     print("\n" + "=" * 80)
-    print("🚀 NIFTY OPTIONS BOT - CPR + VWAP + VOLUME + OI STRATEGY")
+    print("🚀 NIFTY OPTIONS BOT - CPR + VWAP + VOLUME + OI STRATEGY V2.1")
     print("=" * 80)
     
     if not validate_token():
@@ -555,7 +594,7 @@ def main():
     print(f"✅ Take Profit: ₹{TAKE_PROFIT}")
     print(f"✅ Stop Loss: ₹{STOP_LOSS}")
     print(f"✅ Trailing Stop: ₹{TRAILING_STOP}")
-    print(f"✅ Volume Threshold: {VOLUME_THRESHOLD}x")
+    print(f"✅ Volume Threshold: {VOLUME_THRESHOLD}x (OPTIMIZED)")
     print("=" * 80 + "\n")
     
     with open(CSV_FILE, "w", newline='', encoding='utf-8') as f:
@@ -689,7 +728,7 @@ def main():
             
             signal, conditions = evaluate_signal(spot, tc, bc, vwap, volume_ratio, oi_trend)
             
-            print_signal_evaluation(conditions, tc, bc)
+            print_signal_evaluation(conditions, tc, bc, volume_ratio)
             
             if signal:
                 option_type = "CE" if signal == "BUY CE" else "PE"
@@ -719,6 +758,7 @@ def main():
     
     except KeyboardInterrupt:
         print(f"\n\n⏹  STOPPED | Trades: {CSV_FILE}")
+
 
 
 if __name__ == "__main__":
