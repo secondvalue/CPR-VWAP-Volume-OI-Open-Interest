@@ -31,7 +31,7 @@ LOT_SIZE = 75
 TAKE_PROFIT = 1500
 STOP_LOSS = 2000
 TRAILING_STOP = 500
-VOLUME_THRESHOLD = 1.00  # ✅ FIXED: Lowered from 1.2 to 1.05 for better signal detection
+VOLUME_THRESHOLD = 0.95  # ✅ FIXED: Lowered from 1.2 to 1.05 for better signal detection
 # =======================================================
 
 
