@@ -18,7 +18,7 @@ import csv
 
 
 # ==================== CONFIGURATION ====================
-ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiI1NUJBOVgiLCJqdGkiOiI2OGZlZTkyNTZmYzliMzVhNWEwNTFmOGEiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6ZmFsc2UsImlhdCI6MTc2MTUzNjI5MywiaXNzIjoidWRhcGktZ2F0ZXdheS1zZXJ2aWNlIiwiZXhwIjoxNzYxNjAyNDAwfQ.taIa_G49YRz1wxhvdmQqN-n3aLoDoqn_mwmeuVC6d7w"
+ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiI1NUJBOVgiLCJqdGkiOiI2OTAwMzhmZjc1ODIwOTY3ZDdhZGI0MDEiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6ZmFsc2UsImlhdCI6MTc2MTYyMjI3MSwiaXNzIjoidWRhcGktZ2F0ZXdheS1zZXJ2aWNlIiwiZXhwIjoxNzYxNjg4ODAwfQ.RRxwc2y8YfYQi6P0Yt554m97RwwAD50hdl3yyzxHFnA"
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1412386951474057299/Jgft_nxzGxcfWOhoLbSWMde-_bwapvqx8l3VQGQwEoR7_8n4b9Q9zN242kMoXsVbLdvG"
 
 
@@ -31,7 +31,7 @@ LOT_SIZE = 75
 TAKE_PROFIT = 1500
 STOP_LOSS = 2000
 TRAILING_STOP = 500
-VOLUME_THRESHOLD = 1.05  # ✅ FIXED: Lowered from 1.2 to 1.05 for better signal detection
+VOLUME_THRESHOLD = 1.00  # ✅ FIXED: Lowered from 1.2 to 1.05 for better signal detection
 # =======================================================
 
 
